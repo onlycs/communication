@@ -57,8 +57,6 @@ data class Contact(
                     val repo = Repository.from(context, act, acn)
                     contacts.add(Contact(context, id, repo))
                 }
-
-                it.close()
             }
 
             return contacts
