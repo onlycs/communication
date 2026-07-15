@@ -1,4 +1,4 @@
-package page.angad.contacts.ui.contacts
+package page.angad.contacts.ui.common
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box

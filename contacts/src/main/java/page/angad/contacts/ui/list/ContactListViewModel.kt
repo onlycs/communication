@@ -1,4 +1,4 @@
-package page.angad.contacts.ui.contacts
+package page.angad.contacts.ui.list
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
@@ -12,7 +12,7 @@ import contacts.core.desc
 import contacts.core.entities.Contact
 import kotlinx.coroutines.launch
 
-class ContactsViewModel(context: Context) : ViewModel() {
+class ContactListViewModel(context: Context) : ViewModel() {
     val contacts = Contacts(context)
     var list = emptyList<Contact>()
 
@@ -41,6 +41,6 @@ class ContactsViewModel(context: Context) : ViewModel() {
 class ContactsViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         @Suppress("UNCHECKED_CAST")
-        return ContactsViewModel(context.applicationContext) as T
+        return ContactListViewModel(context.applicationContext) as T
     }
 }

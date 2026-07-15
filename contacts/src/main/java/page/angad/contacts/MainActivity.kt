@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import page.angad.contacts.ui.contacts.ContactsScreen
+import page.angad.contacts.ui.list.ContactList
 import page.angad.contacts.ui.theme.ContactsTheme
 import page.angad.uicore.RequirePermissions
 
@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
                         android.Manifest.permission.WRITE_CONTACTS
                     )
                 ) {
-                    ContactsScreen()
+                    ContactList()
                 }
             }
         }
