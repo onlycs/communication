@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.max
 import kotlin.math.min
 
+const val STARRED_GROUP: Char = '\u00a0'
+
 @Composable
 fun LabelRail(
     geometry: ListGeometry,

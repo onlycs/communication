@@ -85,8 +85,8 @@ fun <T, G> SegmentedListColumn(
     content: @Composable (GroupedListItemData<T, G>) -> Unit,
     data: Iterable<T>,
     gap: @Composable (G) -> Unit = {},
-    groupBy: (T) -> G,
-    itemId: ((T) -> Any)? = null,
+    groupBy: (T, Int) -> G,
+    itemId: ((T, G) -> Any)? = null,
     groupId: ((G) -> Any)? = null,
     padding: PaddingValues = PaddingValues(16.dp),
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
@@ -94,8 +94,8 @@ fun <T, G> SegmentedListColumn(
 ) {
     val groups = remember(data) {
         val grouped = mutableListOf<Pair<G, MutableList<T>>>()
-        for (item in data) {
-            val group = groupBy(item)
+        for ((i, item) in data.withIndex()) {
+            val group = groupBy(item, i)
             if (grouped.isEmpty() || grouped.last().first != group) {
                 grouped.add(group to mutableListOf(item))
             } else {
@@ -119,7 +119,7 @@ fun <T, G> SegmentedListColumn(
 
             itemsIndexed(
                 items,
-                key = { _, item -> itemId?.invoke(item) ?: item.hashCode() }
+                key = { _, item -> itemId?.invoke(item, group) ?: item.hashCode() }
             ) { index, item ->
                 content(
                     GroupedListItemData(

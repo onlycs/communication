@@ -2,11 +2,8 @@ package page.angad.contacts.ui.list
 
 import contacts.core.entities.Contact
 
-const val STARRED_GROUP = '\u00a0'
-
 fun Contact.sortGroup(): Char {
-    return if (options?.starred ?: false) STARRED_GROUP
-    else displayNamePrimary?.trim()?.takeIf { it.isNotEmpty() }?.uppercase()?.first() ?: '#'
+    return displayNamePrimary?.trim()?.takeIf { it.isNotEmpty() }?.uppercase()?.first() ?: '#'
 }
 
 data class GroupLabel(val group: Char, val startPx: Int, val endPx: Int)

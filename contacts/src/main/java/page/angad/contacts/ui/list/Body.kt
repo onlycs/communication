@@ -15,6 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateSet
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -25,12 +26,18 @@ import page.angad.uicore.SegmentedListColumn
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun ContactListBody(contacts: List<Contact>) {
+fun ContactListBody(
+    contacts: List<Contact>,
+    starred: List<Contact>,
+    selection: SnapshotStateSet<Long>
+) {
     val density = LocalDensity.current
     val overscroll = rememberOverscrollEffect()
     val state = rememberLazyListState()
 
-    val groups = remember(contacts) { contacts.map { it.sortGroup() }.dedupSz() }
+    val groups = remember(contacts) {
+        listOf(STARRED_GROUP to starred.size) + contacts.map { it.sortGroup() }.dedupSz()
+    }
 
     var itemHt by remember { mutableIntStateOf(0) }
     val itemSp = with(density) { 2.dp.roundToPx() }
@@ -57,15 +64,27 @@ fun ContactListBody(contacts: List<Contact>) {
         )
 
         SegmentedListColumn(
-            data = contacts,
-            groupBy = { it.sortGroup() },
-            itemId = { it.id },
+            data = starred + contacts,
+            groupBy = { it, i -> if (i < starred.size) STARRED_GROUP else it.sortGroup() },
+            itemId = { it, group -> it.id to group },
             groupId = { it },
             padding = PaddingValues(top = 16.dp, bottom = 16.dp, end = 16.dp, start = 4.dp),
             gap = { if (it != groups.firstOrNull()?.first) Spacer(Modifier.height(24.dp)) },
             content = { data ->
                 ContactListItem(
                     data = data,
+                    selected = data.value.id in selection,
+                    onClick = {
+                        if (selection.isEmpty()) {
+                            // TODO: open contact
+                        } else {
+                            if (data.value.id in selection) selection -= data.value.id
+                            else selection += data.value.id
+                        }
+                    },
+                    onLongClick = {
+                        if (selection.isEmpty()) selection += data.value.id
+                    },
                     modifier = if (data.position.index == 0) {
                         Modifier.onSizeChanged { px ->
                             if (px.height > 0 && px.height != itemHt) itemHt = px.height

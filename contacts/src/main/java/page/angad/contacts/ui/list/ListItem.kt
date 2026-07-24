@@ -16,7 +16,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import contacts.core.entities.Contact
-import page.angad.contacts.ui.common.ContactPhoto
+import page.angad.contacts.ui.common.SelectablePhoto
 import page.angad.contacts.util.appName
 import page.angad.uicore.GroupedListItemData
 
@@ -25,17 +25,22 @@ import page.angad.uicore.GroupedListItemData
 fun ContactListItem(
     data: GroupedListItemData<Contact, Char>,
     modifier: Modifier = Modifier,
+    selected: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
 ) {
     SegmentedListItem(
-        onClick = {},
         shapes = data.shape(),
+        selected = selected,
         colors = ListItemDefaults.colors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
         ),
+        onClick = onClick,
+        onLongClick = onLongClick,
         modifier = modifier
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            ContactPhoto(contact = data.value)
+            SelectablePhoto(contact = data.value, selected = selected)
 
             Text(
                 data.value.displayNamePrimary ?: "(No name)",
@@ -44,7 +49,7 @@ fun ContactListItem(
                 modifier = Modifier.padding(start = 16.dp)
             )
 
-            Spacer(Modifier.weight(1F))
+            Spacer(Modifier.weight(1f))
 
             AccountLabel(
                 contact = data.value,
