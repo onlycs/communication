@@ -1,6 +1,5 @@
 package page.angad.contacts.ui.common
 
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -18,7 +17,6 @@ import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -37,7 +35,8 @@ import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.toPath
 import coil.compose.AsyncImage
-import contacts.core.entities.Contact
+import page.angad.libcontacts.Contact
+import page.angad.libcontacts.schema.Contacts
 import kotlin.math.absoluteValue
 import androidx.compose.material3.MaterialShapes.Companion as ExpressiveShape
 
@@ -67,31 +66,29 @@ fun SelectablePhoto(
     contact: Contact,
     selected: Boolean = false,
 ) {
+    val id = contact.id
     val poly = ExpressiveShape.Circle
 
-    val morph = remember(contact.id) { Morph(poly, MaterialShapes.SoftBurst) }
+    val morph = remember(id) { Morph(poly, MaterialShapes.SoftBurst) }
     val scheme = MaterialTheme.motionScheme
+
     val t by animateFloatAsState(
         targetValue = if (selected) 1f else 0f,
         animationSpec = scheme.defaultSpatialSpec(),
-        label = "Contact/Select/PhotoMorph/Progress"
+        label = "Contact/Select/PhotoMorph"
     )
-
-    val scale = remember(contact.id) { Animatable(1f) }
-    val scaleSpec = spring<Float>(
-        dampingRatio = Spring.DampingRatioLowBouncy,
-        stiffness = Spring.StiffnessMedium
+    val scale by animateFloatAsState(
+        targetValue = if (selected) 1.25f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "Contact/Select/PhotoScale"
     )
-
-    val check = remember(contact.id) { Animatable(0f) }
-
-    LaunchedEffect(selected) {
-        val scaleTarget = if (selected) 1.25f else 1f
-        val checkTarget = if (selected) 1f else 0f
-
-        scale.animateTo(scaleTarget, animationSpec = scaleSpec)
-        check.animateTo(checkTarget)
-    }
+    val check by animateFloatAsState(
+        targetValue = if (selected) 1f else 0f,
+        label = "Contact/Select/CheckScale"
+    )
 
     val shape = remember(morph, t) { MorphShape(morph, t) }
 
@@ -99,8 +96,8 @@ fun SelectablePhoto(
         Modifier
             .size(32.dp)
             .graphicsLayer {
-                scaleX = scale.value
-                scaleY = scale.value
+                scaleX = scale
+                scaleY = scale
             }
             .clip(shape)
     ) {
@@ -110,13 +107,13 @@ fun SelectablePhoto(
             Modifier
                 .fillMaxSize()
                 .graphicsLayer {
-                    scaleX = check.value
-                    scaleY = check.value
+                    scaleX = check
+                    scaleY = check
                 }
                 .background(MaterialTheme.colorScheme.primary)
         ) {
             Icon(
-                Icons.Filled.Check,
+                Icons.Default.Check,
                 contentDescription = "Selected",
                 tint = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier
@@ -130,14 +127,17 @@ fun SelectablePhoto(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ContactPhoto(contact: Contact) {
-    if (contact.photoUri == null) {
-        InitialedContactPhoto(contact.displayNamePrimary ?: "(No name)")
+    val photoUri = contact[Contacts.PhotoUri]
+    val displayName = contact[Contacts.DisplayName]
+
+    if (photoUri == null) {
+        InitialedContactPhoto(displayName.orEmpty())
         return
     }
 
     AsyncImage(
-        model = contact.photoUri,
-        contentDescription = contact.displayNamePrimary,
+        model = photoUri,
+        contentDescription = displayName,
         modifier = Modifier
             .fillMaxSize()
             .aspectRatio(1f)
@@ -157,25 +157,32 @@ private fun InitialedContactPhoto(name: String) {
         colors[name.hashCode().absoluteValue % colors.size]
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(color),
-        contentAlignment = Alignment.Center
-    ) {
-        if (initial != null) {
+
+    if (initial != null) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(color),
+            contentAlignment = Alignment.Center
+        ) {
             Text(
                 text = "$initial",
                 color = Color.White,
                 style = MaterialTheme.typography.titleLarge
             )
-        } else {
-            Icon(
-                imageVector = Icons.Filled.AccountCircle,
-                tint = Color.White,
-                contentDescription = "(No name)",
-                modifier = Modifier.size(MaterialTheme.typography.titleLarge.fontSize.value.dp)
-            )
         }
+    } else {
+        Icon(
+            imageVector = Icons.Default.AccountCircle,
+            tint = color,
+            contentDescription = "(No name)",
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White)
+                .graphicsLayer {
+                    scaleX = 1.2f
+                    scaleY = 1.2f
+                }
+        )
     }
 }

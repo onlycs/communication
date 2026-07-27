@@ -1,9 +1,11 @@
 package page.angad.contacts.ui.list
 
-import contacts.core.entities.Contact
+import page.angad.libcontacts.Contact
+import page.angad.libcontacts.schema.Contacts
 
 fun Contact.sortGroup(): Char {
-    return displayNamePrimary?.trim()?.takeIf { it.isNotEmpty() }?.uppercase()?.first() ?: '#'
+    return this[Contacts.DisplayName]?.trim()?.takeIf { it.isNotEmpty() }?.uppercase()?.first()
+        ?: '#'
 }
 
 data class GroupLabel(val group: Char, val startPx: Int, val endPx: Int)

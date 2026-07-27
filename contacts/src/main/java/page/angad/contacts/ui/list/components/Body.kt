@@ -1,4 +1,4 @@
-package page.angad.contacts.ui.list
+package page.angad.contacts.ui.list.components
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -15,13 +15,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateSet
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import contacts.core.entities.Contact
+import page.angad.contacts.ui.list.computeGeometry
+import page.angad.contacts.ui.list.sortGroup
 import page.angad.contacts.util.dedupSz
+import page.angad.libcontacts.Contact
 import page.angad.uicore.SegmentedListColumn
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -29,14 +31,15 @@ import page.angad.uicore.SegmentedListColumn
 fun ContactListBody(
     contacts: List<Contact>,
     starred: List<Contact>,
-    selection: SnapshotStateSet<Long>
+    selection: SnapshotStateMap<Long, Contact>
 ) {
     val density = LocalDensity.current
     val overscroll = rememberOverscrollEffect()
     val state = rememberLazyListState()
 
     val groups = remember(contacts) {
-        listOf(STARRED_GROUP to starred.size) + contacts.map { it.sortGroup() }.dedupSz()
+        val pre = if (starred.isEmpty()) emptyList() else listOf(STARRED_GROUP to starred.size)
+        pre + contacts.map { it.sortGroup() }.dedupSz()
     }
 
     var itemHt by remember { mutableIntStateOf(0) }
@@ -71,19 +74,21 @@ fun ContactListBody(
             padding = PaddingValues(top = 16.dp, bottom = 16.dp, end = 16.dp, start = 4.dp),
             gap = { if (it != groups.firstOrNull()?.first) Spacer(Modifier.height(24.dp)) },
             content = { data ->
+                val id = data.value.id
+
                 ContactListItem(
                     data = data,
-                    selected = data.value.id in selection,
+                    selected = id in selection,
                     onClick = {
                         if (selection.isEmpty()) {
                             // TODO: open contact
                         } else {
-                            if (data.value.id in selection) selection -= data.value.id
-                            else selection += data.value.id
+                            if (id in selection) selection -= id
+                            else selection += id to data.value
                         }
                     },
                     onLongClick = {
-                        if (selection.isEmpty()) selection += data.value.id
+                        if (selection.isEmpty()) selection += id to data.value
                     },
                     modifier = if (data.position.index == 0) {
                         Modifier.onSizeChanged { px ->

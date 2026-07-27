@@ -1,4 +1,4 @@
-package page.angad.contacts.ui.header
+package page.angad.contacts.ui.list.page
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding

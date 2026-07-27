@@ -20,10 +20,10 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven { url = uri("https://jitpack.io") }
     }
 }
 
 rootProject.name = "Communication"
 include(":contacts")
 include(":uicore")
+include(":libcontacts")

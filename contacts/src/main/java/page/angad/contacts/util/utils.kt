@@ -2,6 +2,10 @@ package page.angad.contacts.util
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.net.Uri
+import androidx.core.content.FileProvider
+import java.io.File
+import java.io.FileOutputStream
 
 fun <T> Iterable<T>.dedup(eq: (T, T) -> Boolean = { a, b -> a == b }): List<T> {
     return dedupSz(eq).map { it.first }
@@ -49,4 +53,19 @@ fun appName(context: Context, pkgId: String): String {
 fun extractEmail(s: String): String {
     val regex = Regex("""[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}""")
     return regex.find(s)?.value ?: s
+}
+
+fun setFilename(context: Context, vCard: Uri, filename: String): Uri {
+    val dir = File(context.cacheDir, "shared").apply { mkdirs() }
+    val file = File(dir, filename)
+
+    context.contentResolver.openInputStream(vCard)?.use { input ->
+        FileOutputStream(file).use { output -> input.copyTo(output) }
+    }
+    
+    return FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.fileprovider",
+        file
+    )
 }

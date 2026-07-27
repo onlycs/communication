@@ -60,10 +60,9 @@ dependencies {
     // third party
     implementation(libs.arrow.core)
     implementation(libs.coil.compose)
-    implementation(libs.contacts.core)
-    implementation(libs.contacts.async)
 
     // first party
+    implementation(project(":libcontacts"))
     implementation(project(":uicore"))
 
     // debug

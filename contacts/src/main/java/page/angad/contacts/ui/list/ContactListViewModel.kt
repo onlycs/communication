@@ -2,41 +2,58 @@ package page.angad.contacts.ui.list
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import contacts.core.Contacts
-import contacts.core.ContactsFields
-import contacts.core.Fields
-import contacts.core.asc
-import contacts.core.entities.Contact
 import kotlinx.coroutines.launch
+import page.angad.libcontacts.Contact
+import page.angad.libcontacts.ContactsApi
+import page.angad.libcontacts.asc
+import page.angad.libcontacts.schema.Contacts
+import page.angad.libcontacts.schema.RawContacts
 
 class ContactListViewModel(context: Context) : ViewModel() {
-    val contacts = Contacts(context)
-    var list = emptyList<Contact>()
-    var starred = emptyList<Contact>()
+    val api = ContactsApi(context)
+
+    var list by mutableStateOf(emptyList<Contact>())
+        private set
+    var map by mutableStateOf(emptyMap<Long, Contact>())
+        private set
+    var starred by mutableStateOf(emptyList<Contact>())
+        private set
 
     init {
-        reload()
+        viewModelScope.launch {
+            reload()
+        }
     }
 
-    fun reload() {
-        viewModelScope.launch {
-            list = contacts
-                .broadQuery()
-                .orderBy(ContactsFields.DisplayNamePrimary.asc(ignoreCase = true))
-                .include(
-                    Fields.Contact.DisplayNamePrimary,
-                    Fields.Contact.PhotoUri,
-                    Fields.Contact.Options.Starred
-                )
-                .find()
+    suspend fun reload() {
+        list = api
+            .select(
+                Contacts.DisplayName,
+                Contacts.PhotoUri,
+                Contacts.Starred,
+                RawContacts.AccountType,
+            )
+            .orderBy(Contacts.DisplayName.asc(ignoreCase = true))
+            .find()
 
-            starred = list.filter { it.options?.starred ?: false }
-        }
+        map = list.associateBy { it.id }
+        starred = list.filter { it[Contacts.Starred] }
+    }
+
+    suspend fun reload(ids: Collection<Long>) {
+        val fresh = ids.map { it to map[it]?.reload() }.associate { it }
+
+        list = list.mapNotNull { if (it.id in fresh) fresh[it.id] else it }
+        map = list.associateBy { it.id }
+        starred = list.filter { it[Contacts.Starred] }
     }
 
     companion object {

@@ -1,4 +1,4 @@
-package page.angad.contacts.ui.list
+package page.angad.contacts.ui.list.components
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,9 +15,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import contacts.core.entities.Contact
 import page.angad.contacts.ui.common.SelectablePhoto
 import page.angad.contacts.util.appName
+import page.angad.libcontacts.Contact
+import page.angad.libcontacts.schema.Contacts
+import page.angad.libcontacts.schema.RawContacts
 import page.angad.uicore.GroupedListItemData
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -32,9 +34,7 @@ fun ContactListItem(
     SegmentedListItem(
         shapes = data.shape(),
         selected = selected,
-        colors = ListItemDefaults.colors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
-        ),
+        colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest),
         onClick = onClick,
         onLongClick = onLongClick,
         modifier = modifier
@@ -43,7 +43,7 @@ fun ContactListItem(
             SelectablePhoto(contact = data.value, selected = selected)
 
             Text(
-                data.value.displayNamePrimary ?: "(No name)",
+                data.value[Contacts.DisplayName] ?: "(No name)",
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(start = 16.dp)
@@ -62,10 +62,10 @@ fun ContactListItem(
 @Composable
 fun AccountLabel(contact: Contact, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val account = contact.rawContacts.find { it.account != null }?.account
+    val account = contact[RawContacts].firstNotNullOfOrNull { it[RawContacts.AccountType] }
 
     Text(
-        text = account?.let { appName(context, it.type) } ?: "Device",
+        text = account?.let { appName(context, it) } ?: "Device",
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         color = MaterialTheme.colorScheme.onSurfaceVariant,

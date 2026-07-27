@@ -9,6 +9,10 @@ composeBom = "2026.06.01"
 appcompat = "1.7.1"
 material = "1.14.0"
 symbolProcessingApi = "2.3.9"
+kotlinxCoroutines = "1.10.2"
+junit = "4.13.2"
+junitVersion = "1.1.5"
+espressoCore = "3.5.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -30,8 +34,10 @@ material = { group = "com.google.android.material", name = "material", version.r
 accompanist-permissions = { group = "com.google.accompanist", name = "accompanist-permissions", version = "0.37.3" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version = "2.7.0" }
 symbol-processing-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "symbolProcessingApi" }
-contacts-core = { group = "com.github.vestrel00.contacts-android", name = "core", version = "0.5.0" }
-contacts-async = { group = "com.github.vestrel00.contacts-android", name = "async", version = "0.5.0" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

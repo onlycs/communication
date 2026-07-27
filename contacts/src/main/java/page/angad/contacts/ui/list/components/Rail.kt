@@ -1,4 +1,4 @@
-package page.angad.contacts.ui.list
+package page.angad.contacts.ui.list.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import page.angad.contacts.ui.list.ListGeometry
 import kotlin.math.max
 import kotlin.math.min
 
