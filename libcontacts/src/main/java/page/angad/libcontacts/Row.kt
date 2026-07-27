@@ -1,7 +1,7 @@
 package page.angad.libcontacts
 
 /** One row of a [Kind], always carrying [id] and [contactId]. */
-class Row<K> internal constructor(
+class Row<K : Kind<K>> internal constructor(
     internal val kind: Kind<K>,
     private val values: Map<Field<K, *>, Any?>,
 ) {

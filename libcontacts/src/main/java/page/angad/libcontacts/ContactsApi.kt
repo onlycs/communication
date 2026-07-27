@@ -2,6 +2,8 @@ package page.angad.libcontacts
 
 import android.accounts.Account
 import android.content.Context
+import page.angad.libcontacts.schema.DataKind
+import page.angad.libcontacts.schema.RawContacts
 
 /**
  * Entry point to the contacts provider.
@@ -25,18 +27,19 @@ class ContactsApi(context: Context) {
 
     fun select(vararg fields: Field<*, *>) = SelectQuery(resolver, fields.toList())
 
-    fun update(body: (AssignmentScope) -> Unit) =
-        UpdateQuery(resolver, AssignmentScope().also(body).assignments)
+    /** Updates rows of one kind; the fields assigned in [body] must all share it. */
+    fun <K : Kind<K>> update(body: (AssignmentScope<K>) -> Unit) =
+        UpdateQuery(resolver, AssignmentScope<K>().also(body).assignments)
 
-    /**
-     * Deletes rows of [kind]. To delete whole contacts, target `RawContacts` by contact
-     * id — the provider does not support bulk deletes on the aggregate contacts uri.
-     */
-    fun delete(kind: Kind<*>) = DeleteQuery(resolver, kind)
+    /** Deletes data rows of [kind]. */
+    fun <K : DataKind<K>> delete(kind: K) = DeleteQuery(resolver, kind)
 
-    /** Inserts one data row; attach it to a raw contact via `where(RawContactId eq id)`. */
-    fun insert(body: (AssignmentScope) -> Unit) =
-        InsertQuery(resolver, AssignmentScope().also(body).assignments)
+    /** Deletes raw contacts; delete whole contacts via `RawContacts.ContactId`. */
+    fun delete(kind: RawContacts) = DeleteQuery(resolver, kind)
+
+    /** Inserts one data row; `commit(rawContactId)` attaches it to that raw contact. */
+    fun <K : DataKind<K>> insert(body: (AssignmentScope<K>) -> Unit) =
+        InsertQuery(resolver, AssignmentScope<K>().also(body).assignments)
 
     /** Starts a new contact; a `null` [account] creates a local, on-device contact. */
     fun new(account: Account? = null) = NewContactBuilder(resolver, account)

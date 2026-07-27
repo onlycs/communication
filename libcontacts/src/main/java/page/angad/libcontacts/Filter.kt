@@ -2,24 +2,24 @@ package page.angad.libcontacts
 
 /**
  * A selection predicate over fields of a single [Kind]. Build with [eq]/[inList] and
- * combine with [and]/[or] — combining filters of different kinds does not compile.
+ * combine with [and]/[or]. Combining filters of different kinds does not compile.
  */
-sealed interface Filter<K>
+sealed interface Filter<K : Kind<K>>
 
-internal data class Eq<K, T>(val field: Field<K, T>, val value: T) : Filter<K>
-internal data class InList<K, T>(val field: Field<K, T>, val values: Collection<T>) : Filter<K>
-internal data class And<K>(val left: Filter<K>, val right: Filter<K>) : Filter<K>
-internal data class Or<K>(val left: Filter<K>, val right: Filter<K>) : Filter<K>
+internal data class Eq<K : Kind<K>, T>(val field: Field<K, T>, val value: T) : Filter<K>
+internal data class InList<K : Kind<K>, T>(val field: Field<K, T>, val values: Collection<T>) : Filter<K>
+internal data class And<K : Kind<K>>(val left: Filter<K>, val right: Filter<K>) : Filter<K>
+internal data class Or<K : Kind<K>>(val left: Filter<K>, val right: Filter<K>) : Filter<K>
 
 /** `column = value`; a `null` value renders as `column IS NULL`. */
-infix fun <K, T> Field<K, T>.eq(value: T): Filter<K> = Eq(this, value)
+infix fun <K : Kind<K>, T> Field<K, T>.eq(value: T): Filter<K> = Eq(this, value)
 
 /** `column IN (...)`; an empty collection matches nothing. */
-infix fun <K, T> Field<K, T>.inList(values: Collection<T>): Filter<K> = InList(this, values)
+infix fun <K : Kind<K>, T> Field<K, T>.inList(values: Collection<T>): Filter<K> = InList(this, values)
 
-infix fun <K> Filter<K>.and(other: Filter<K>): Filter<K> = And(this, other)
+infix fun <K : Kind<K>> Filter<K>.and(other: Filter<K>): Filter<K> = And(this, other)
 
-infix fun <K> Filter<K>.or(other: Filter<K>): Filter<K> = Or(this, other)
+infix fun <K : Kind<K>> Filter<K>.or(other: Filter<K>): Filter<K> = Or(this, other)
 
 /** Renders to a `selection` string and its ordered `selectionArgs`. */
 internal fun Filter<*>.render(): Pair<String, List<String>> = when (this) {
@@ -46,9 +46,9 @@ internal fun Filter<*>.render(): Pair<String, List<String>> = when (this) {
 }
 
 @Suppress("UNCHECKED_CAST")
-internal fun <K> Filter<K>.kind(): Kind<K> = when (this) {
+internal fun <K : Kind<K>> Filter<K>.kind(): K = when (this) {
     is Eq<*, *> -> field.kind
     is InList<*, *> -> field.kind
     is And<*> -> left.kind()
     is Or<*> -> left.kind()
-} as Kind<K>
+} as K

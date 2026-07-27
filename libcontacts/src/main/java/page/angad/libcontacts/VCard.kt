@@ -8,13 +8,7 @@ import kotlinx.coroutines.withContext
 import page.angad.libcontacts.schema.Contacts
 
 /**
- * A shareable vCard export of one contact, served by the provider itself — e.g.
- * `ACTION_SEND` with `EXTRA_STREAM` = [uri] and `type` = [mimeType].
- *
- * [uri] is a `content://` uri owned by the contacts provider, not the caller's app —
- * its filename is not controllable via [uri] alone. To share under a chosen name,
- * copy the bytes from `resolver.openInputStream(uri)` into a file named
- * [suggestedFileName] and expose that file via a `FileProvider`.
+ * A shareable vCard export of one contact, served by the provider itself.
  */
 data class VCard(val uri: Uri, val mimeType: String, val suggestedFileName: String)
 

@@ -9,20 +9,19 @@ import android.provider.ContactsContract
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import page.angad.libcontacts.schema.Contacts
+import page.angad.libcontacts.schema.DataKind
 
 /** Ceiling on ids inlined into an `IN (...)` clause (SQLite's host-variable limit is 999). */
 private const val MAX_IN_IDS = 500
 
-internal fun resolveKind(fields: List<Field<*, *>>): Kind<*> {
-    require(fields.isNotEmpty()) { "at least one field is required" }
-    val kind = fields.first().kind
-    require(fields.all { it.kind == kind }) { "fields span multiple kinds: $fields" }
-    return kind
+internal fun <K : Kind<K>> resolveKind(fields: List<Field<K, *>>): K {
+    require(fields.isNotEmpty()) { "at least one assignment is required" }
+    return fields.first().kind
 }
 
 /** Narrows fields to this kind after validating they belong to it. */
 @Suppress("UNCHECKED_CAST")
-private fun <K> Kind<K>.own(fields: List<Field<*, *>>): List<Field<K, *>> {
+private fun <K : Kind<K>> Kind<K>.own(fields: List<Field<*, *>>): List<Field<K, *>> {
     require(fields.all { it.kind == this }) { "fields do not belong to $this: $fields" }
     return fields as List<Field<K, *>>
 }
@@ -38,12 +37,12 @@ internal fun selectionOf(table: Table, filters: List<Filter<*>>): Pair<String?, 
             parts.flatMap { it.second }.toTypedArray()
 }
 
-private fun List<Assignment<*>>.toContentValues() = ContentValues().apply {
+private fun List<Assignment<*, *>>.toContentValues() = ContentValues().apply {
     forEach { it.field.type.put(this, it.field.column, it.value) }
 }
 
 /** Runs one provider query against a single kind. */
-internal fun <K> queryRows(
+internal fun <K : Kind<K>> queryRows(
     resolver: ContentResolver,
     kind: Kind<K>,
     fields: List<Field<K, *>>,
@@ -71,13 +70,16 @@ internal fun <K> queryRows(
 }
 
 /** Ids of the contacts having at least one row matching [filter]. */
-private fun <K> contactIdsMatching(resolver: ContentResolver, filter: Filter<K>): Set<Long> =
+private fun <K : Kind<K>> contactIdsMatching(
+    resolver: ContentResolver,
+    filter: Filter<K>
+): Set<Long> =
     queryRows(resolver, filter.kind(), emptyList(), listOf(filter), null)
         .map { it.contactId }
         .toSet()
 
 /** This kind's rows for [contactIds], grouped by contact. */
-private fun <K> subRowsByContact(
+private fun <K : Kind<K>> subRowsByContact(
     resolver: ContentResolver,
     kind: Kind<K>,
     fields: List<Field<*, *>>,
@@ -154,77 +156,72 @@ class SelectQuery internal constructor(
     suspend fun find(): List<Contact> = withContext(Dispatchers.IO) {
         findContacts(resolver, fields, filters, order)
     }
-
-    suspend fun firstOrNull(): Contact? = find().firstOrNull()
 }
 
-class UpdateQuery internal constructor(
+class UpdateQuery<K : Kind<K>> internal constructor(
     private val resolver: ContentResolver,
-    private val assignments: List<Assignment<*>>,
+    private val assignments: List<Assignment<K, *>>,
 ) {
-    private val kind = resolveKind(assignments.map { it.field })
-    private val filters = mutableListOf<Filter<*>>()
+    /** Restricts the affected rows; [commit] only exists after at least one filter. */
+    fun where(filter: Filter<K>) = FilteredUpdate(resolver, assignments, listOf(filter))
+}
 
-    /** Restricts the affected rows; repeated calls are combined with AND. Required before [commit]. */
-    fun where(filter: Filter<*>) = apply {
-        require(filter.kind() == kind) { "filter on ${filter.kind()} cannot target $kind" }
-        filters += filter
-    }
+class FilteredUpdate<K : Kind<K>> internal constructor(
+    private val resolver: ContentResolver,
+    private val assignments: List<Assignment<K, *>>,
+    private val filters: List<Filter<K>>,
+) {
+    /** Further restricts the affected rows; repeated calls are combined with AND. */
+    fun where(filter: Filter<K>) = FilteredUpdate(resolver, assignments, filters + filter)
 
     /** Returns the number of updated rows. */
     suspend fun commit(): Int = withContext(Dispatchers.IO) {
-        require(filters.isNotEmpty()) { "update requires a where() clause" }
+        val kind = resolveKind(assignments.map { it.field })
         val (selection, args) = selectionOf(kind.table, filters)
         resolver.update(kind.table.contentUri, assignments.toContentValues(), selection, args)
     }
 }
 
-class DeleteQuery internal constructor(
+class DeleteQuery<K : Kind<K>> internal constructor(
     private val resolver: ContentResolver,
-    private val kind: Kind<*>,
+    private val kind: Kind<K>,
 ) {
-    private val filters = mutableListOf<Filter<*>>()
+    /** Restricts the affected rows; [commit] only exists after at least one filter. */
+    fun where(filter: Filter<K>) = FilteredDelete(resolver, kind, listOf(filter))
+}
 
-    /** Restricts the affected rows; repeated calls are combined with AND. Required before [commit]. */
-    fun where(filter: Filter<*>) = apply {
-        require(filter.kind() == kind) { "filter on ${filter.kind()} cannot target $kind" }
-        filters += filter
-    }
+class FilteredDelete<K : Kind<K>> internal constructor(
+    private val resolver: ContentResolver,
+    private val kind: Kind<K>,
+    private val filters: List<Filter<K>>,
+) {
+    /** Further restricts the affected rows; repeated calls are combined with AND. */
+    fun where(filter: Filter<K>) = FilteredDelete(resolver, kind, filters + filter)
 
     /** Returns the number of deleted rows. */
     suspend fun commit(): Int = withContext(Dispatchers.IO) {
-        require(filters.isNotEmpty()) { "delete requires a where() clause" }
         val (selection, args) = selectionOf(kind.table, filters)
         resolver.delete(kind.table.contentUri, selection, args)
     }
 }
 
-class InsertQuery internal constructor(
+class InsertQuery<K : DataKind<K>> internal constructor(
     private val resolver: ContentResolver,
-    private val assignments: List<Assignment<*>>,
+    private val assignments: List<Assignment<K, *>>,
 ) {
-    private val kind = resolveKind(assignments.map { it.field }).also {
-        require(it.table is Table.Data) { "insert() only supports data rows; use new() for whole contacts" }
-    }
-    private val seeds = mutableListOf<Eq<*, *>>()
-
-    /**
-     * Seeds a column on the new row instead of filtering; only [eq] is accepted,
-     * e.g. `where(Phone.RawContactId eq id)` to attach the row to an existing raw contact.
-     */
-    fun where(filter: Filter<*>) = apply {
-        require(filter is Eq<*, *>) { "insert().where() only accepts eq filters" }
-        require(filter.field.kind == kind) { "${filter.field} does not belong to $kind" }
-        seeds += filter
-    }
-
-    /** Returns the new data row's id. */
-    suspend fun commit(): Long = withContext(Dispatchers.IO) {
+    /** Inserts the row onto the raw contact [rawContactId]; returns the new data row's id. */
+    suspend fun commit(rawContactId: Long): Long = withContext(Dispatchers.IO) {
+        val kind = resolveKind(assignments.map { it.field })
         val values = assignments.toContentValues()
-        seeds.forEach { it.field.type.put(values, it.field.column, it.value) }
-        values.put(ContactsContract.Data.MIMETYPE, (kind.table as Table.Data).mimetype)
+        values.put(ContactsContract.Data.RAW_CONTACT_ID, rawContactId)
+        values.put(ContactsContract.Data.MIMETYPE, kind.mimetype)
 
-        val uri = checkNotNull(resolver.insert(kind.table.contentUri, values)) { "insert failed" }
+        val uri = checkNotNull(
+            resolver.insert(
+                ContactsContract.Data.CONTENT_URI,
+                values
+            )
+        ) { "insert failed" }
         ContentUris.parseId(uri)
     }
 }
@@ -233,14 +230,12 @@ class NewContactBuilder internal constructor(
     private val resolver: ContentResolver,
     private val account: Account?,
 ) {
-    private val rows = mutableListOf<Pair<Table.Data, List<Assignment<*>>>>()
+    private val rows = mutableListOf<Pair<String, List<Assignment<*, *>>>>()
 
     /** Adds one data row (name, phone, email, ...) to the new contact. */
-    fun add(body: (AssignmentScope) -> Unit) = apply {
-        val assignments = AssignmentScope().also(body).assignments
-        val table = resolveKind(assignments.map { it.field }).table
-        require(table is Table.Data) { "new().add() only accepts data-row fields" }
-        rows += table to assignments
+    fun <K : DataKind<K>> add(body: (AssignmentScope<K>) -> Unit) = apply {
+        val assignments = AssignmentScope<K>().also(body).assignments
+        rows += resolveKind(assignments.map { it.field }).mimetype to assignments
     }
 
     /** Atomically creates the raw contact and its data rows; returns the new raw contact's id. */
@@ -252,9 +247,9 @@ class NewContactBuilder internal constructor(
                 .build()
         )
 
-        rows.forEach { (table, assignments) ->
+        rows.forEach { (mimetype, assignments) ->
             val values = assignments.toContentValues()
-            values.put(ContactsContract.Data.MIMETYPE, table.mimetype)
+            values.put(ContactsContract.Data.MIMETYPE, mimetype)
 
             // The raw contact's id doesn't exist until the batch runs, so each data
             // row back-references the result of the RawContacts insert at index 0.
