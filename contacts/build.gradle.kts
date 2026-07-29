@@ -60,12 +60,12 @@ dependencies {
     // third party
     implementation(libs.arrow.core)
     implementation(libs.coil.compose)
+    implementation(libs.compose.material.symbols)
 
     // first party
     implementation(project(":libcontacts"))
     implementation(project(":uicore"))
 
     // debug
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

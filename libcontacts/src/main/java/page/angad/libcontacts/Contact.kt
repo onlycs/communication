@@ -23,7 +23,7 @@ class Contact internal constructor(
 
     /** This contact's rows of [kind], e.g. `contact[Phone]`. */
     @Suppress("UNCHECKED_CAST")
-    operator fun <K : Kind<K>> get(kind: K): List<Row<K>> = rows[kind].orEmpty() as List<Row<K>>
+    operator fun <K> get(kind: Kind<K>): List<Row<K>> = rows[kind].orEmpty() as List<Row<K>>
 
     /**
      * Re-reads all selected fields, returning a new [Contact], or `null` if the contact
@@ -34,7 +34,7 @@ class Contact internal constructor(
     }
 
     /** vCard export of this contact, ready for a share intent. */
-    suspend fun vcard(): VCard = vCardQuery(resolver, listOf(id)).first()
+    suspend fun vcard(): VCard = vCardsQuery(resolver, listOf(id)).first()
 
     override fun equals(other: Any?) =
         other is Contact && other.rows == rows

@@ -29,12 +29,12 @@ fun ContactListItem(
     modifier: Modifier = Modifier,
     selected: Boolean,
     onClick: () -> Unit,
-    onLongClick: () -> Unit,
+    onLongClick: (() -> Unit)?,
 ) {
     SegmentedListItem(
         shapes = data.shape(),
         selected = selected,
-        colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest),
+        colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
         onClick = onClick,
         onLongClick = onLongClick,
         modifier = modifier

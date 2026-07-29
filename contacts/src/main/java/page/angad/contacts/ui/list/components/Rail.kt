@@ -7,9 +7,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,6 +16,8 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import dev.vicart.compose.material.symbols.FilledRoundedSymbol
+import dev.vicart.compose.material.symbols.MaterialSymbols
 import page.angad.contacts.ui.list.ListGeometry
 import kotlin.math.max
 import kotlin.math.min
@@ -70,9 +69,8 @@ fun LabelRail(
 @Composable
 private fun GroupLabelContent(group: Char) {
     if (group == STARRED_GROUP) {
-        Icon(
-            Icons.Default.Star,
-            contentDescription = "Starred",
+        FilledRoundedSymbol(
+            MaterialSymbols.STAR,
             tint = MaterialTheme.colorScheme.primary
         )
     } else {

@@ -14,14 +14,17 @@ import page.angad.libcontacts.schema.DataKind
 /** Ceiling on ids inlined into an `IN (...)` clause (SQLite's host-variable limit is 999). */
 private const val MAX_IN_IDS = 500
 
-internal fun <K : Kind<K>> resolveKind(fields: List<Field<K, *>>): K {
+internal fun <K> resolveKind(fields: List<Field<K, *>>): Kind<K> {
     require(fields.isNotEmpty()) { "at least one assignment is required" }
     return fields.first().kind
 }
 
+/** Mimetype of a data row's table; callers are restricted to [DataKind] at compile time. */
+private val Kind<*>.dataMimetype: String get() = (table as Table.Data).mimetype
+
 /** Narrows fields to this kind after validating they belong to it. */
 @Suppress("UNCHECKED_CAST")
-private fun <K : Kind<K>> Kind<K>.own(fields: List<Field<*, *>>): List<Field<K, *>> {
+private fun <K> Kind<K>.own(fields: List<Field<*, *>>): List<Field<K, *>> {
     require(fields.all { it.kind == this }) { "fields do not belong to $this: $fields" }
     return fields as List<Field<K, *>>
 }
@@ -42,7 +45,7 @@ private fun List<Assignment<*, *>>.toContentValues() = ContentValues().apply {
 }
 
 /** Runs one provider query against a single kind. */
-internal fun <K : Kind<K>> queryRows(
+internal fun <K> queryRows(
     resolver: ContentResolver,
     kind: Kind<K>,
     fields: List<Field<K, *>>,
@@ -70,7 +73,7 @@ internal fun <K : Kind<K>> queryRows(
 }
 
 /** Ids of the contacts having at least one row matching [filter]. */
-private fun <K : Kind<K>> contactIdsMatching(
+private fun <K> contactIdsMatching(
     resolver: ContentResolver,
     filter: Filter<K>
 ): Set<Long> =
@@ -79,7 +82,7 @@ private fun <K : Kind<K>> contactIdsMatching(
         .toSet()
 
 /** This kind's rows for [contactIds], grouped by contact. */
-private fun <K : Kind<K>> subRowsByContact(
+private fun <K> subRowsByContact(
     resolver: ContentResolver,
     kind: Kind<K>,
     fields: List<Field<*, *>>,
@@ -158,7 +161,7 @@ class SelectQuery internal constructor(
     }
 }
 
-class UpdateQuery<K : Kind<K>> internal constructor(
+class UpdateQuery<K> internal constructor(
     private val resolver: ContentResolver,
     private val assignments: List<Assignment<K, *>>,
 ) {
@@ -166,7 +169,7 @@ class UpdateQuery<K : Kind<K>> internal constructor(
     fun where(filter: Filter<K>) = FilteredUpdate(resolver, assignments, listOf(filter))
 }
 
-class FilteredUpdate<K : Kind<K>> internal constructor(
+class FilteredUpdate<K> internal constructor(
     private val resolver: ContentResolver,
     private val assignments: List<Assignment<K, *>>,
     private val filters: List<Filter<K>>,
@@ -182,7 +185,7 @@ class FilteredUpdate<K : Kind<K>> internal constructor(
     }
 }
 
-class DeleteQuery<K : Kind<K>> internal constructor(
+class DeleteQuery<K> internal constructor(
     private val resolver: ContentResolver,
     private val kind: Kind<K>,
 ) {
@@ -190,7 +193,7 @@ class DeleteQuery<K : Kind<K>> internal constructor(
     fun where(filter: Filter<K>) = FilteredDelete(resolver, kind, listOf(filter))
 }
 
-class FilteredDelete<K : Kind<K>> internal constructor(
+class FilteredDelete<K> internal constructor(
     private val resolver: ContentResolver,
     private val kind: Kind<K>,
     private val filters: List<Filter<K>>,
@@ -205,7 +208,7 @@ class FilteredDelete<K : Kind<K>> internal constructor(
     }
 }
 
-class InsertQuery<K : DataKind<K>> internal constructor(
+class InsertQuery<K : DataKind<*>> internal constructor(
     private val resolver: ContentResolver,
     private val assignments: List<Assignment<K, *>>,
 ) {
@@ -214,7 +217,7 @@ class InsertQuery<K : DataKind<K>> internal constructor(
         val kind = resolveKind(assignments.map { it.field })
         val values = assignments.toContentValues()
         values.put(ContactsContract.Data.RAW_CONTACT_ID, rawContactId)
-        values.put(ContactsContract.Data.MIMETYPE, kind.mimetype)
+        values.put(ContactsContract.Data.MIMETYPE, kind.dataMimetype)
 
         val uri = checkNotNull(
             resolver.insert(
@@ -233,9 +236,9 @@ class NewContactBuilder internal constructor(
     private val rows = mutableListOf<Pair<String, List<Assignment<*, *>>>>()
 
     /** Adds one data row (name, phone, email, ...) to the new contact. */
-    fun <K : DataKind<K>> add(body: (AssignmentScope<K>) -> Unit) = apply {
+    fun <K : DataKind<*>> add(body: (AssignmentScope<K>) -> Unit) = apply {
         val assignments = AssignmentScope<K>().also(body).assignments
-        rows += resolveKind(assignments.map { it.field }).mimetype to assignments
+        rows += resolveKind(assignments.map { it.field }).dataMimetype to assignments
     }
 
     /** Atomically creates the raw contact and its data rows; returns the new raw contact's id. */

@@ -12,8 +12,32 @@ import page.angad.libcontacts.schema.Contacts
  */
 data class VCard(val uri: Uri, val mimeType: String, val suggestedFileName: String)
 
+/** Every contact found for [ids] in one [VCard]; `null` if none of them exist. */
+internal suspend fun vCardCombinedQuery(resolver: ContentResolver, ids: List<Long>): VCard? =
+    withContext(Dispatchers.IO) {
+        val lookupKeys = queryRows(
+            resolver,
+            Contacts,
+            listOf(Contacts.LookupKey),
+            listOf(Contacts.Id inList ids),
+            null
+        ).mapNotNull { it[Contacts.LookupKey] }
+
+        if (lookupKeys.isEmpty()) return@withContext null
+
+        // The multi-vCard uri takes the lookup keys joined by ':', encoded as one segment.
+        VCard(
+            Uri.withAppendedPath(
+                ContactsContract.Contacts.CONTENT_MULTI_VCARD_URI,
+                Uri.encode(lookupKeys.joinToString(":"))
+            ),
+            ContactsContract.Contacts.CONTENT_VCARD_TYPE,
+            "contacts.vcf"
+        )
+    }
+
 /** One [VCard] per id found; ids with no matching contact are silently skipped. */
-internal suspend fun vCardQuery(resolver: ContentResolver, ids: List<Long>): List<VCard> =
+internal suspend fun vCardsQuery(resolver: ContentResolver, ids: List<Long>): List<VCard> =
     withContext(Dispatchers.IO) {
         queryRows(
             resolver,

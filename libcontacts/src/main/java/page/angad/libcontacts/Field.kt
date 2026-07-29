@@ -5,7 +5,7 @@ import android.database.Cursor
 import kotlin.reflect.KType
 
 /** A typed column of a [Kind]. Obtain instances via [Kind.field]. */
-class Field<K : Kind<K>, T>(val kind: K, val column: String, val type: ColumnType) {
+class Field<K, T>(val kind: Kind<K>, val column: String, val type: ColumnType) {
     val table: Table get() = kind.table
 
     override fun equals(other: Any?) =

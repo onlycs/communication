@@ -3,9 +3,20 @@ package page.angad.contacts.util
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
 import androidx.core.content.FileProvider
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
+import kotlin.time.Duration.Companion.milliseconds
 
 fun <T> Iterable<T>.dedup(eq: (T, T) -> Boolean = { a, b -> a == b }): List<T> {
     return dedupSz(eq).map { it.first }
@@ -62,10 +73,37 @@ fun setFilename(context: Context, vCard: Uri, filename: String): Uri {
     context.contentResolver.openInputStream(vCard)?.use { input ->
         FileOutputStream(file).use { output -> input.copyTo(output) }
     }
-    
+
     return FileProvider.getUriForFile(
         context,
         "${context.packageName}.fileprovider",
         file
     )
+}
+
+class LoadingCounter {
+    private val _count = MutableStateFlow(0)
+
+    fun inc() {
+        _count.update { it + 1 }
+    }
+
+    fun dec() {
+        _count.update { it - 1 }
+    }
+
+    @Composable
+    fun state(): State<Int> {
+        return _count.collectAsState()
+    }
+}
+
+fun Job.attach(counter: LoadingCounter) {
+    counter.inc()
+    invokeOnCompletion {
+        CoroutineScope(Dispatchers.Default).launch {
+            delay(200.milliseconds)
+            counter.dec()
+        }
+    }
 }

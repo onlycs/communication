@@ -44,7 +44,7 @@ fun ContactListBody(
 
     var itemHt by remember { mutableIntStateOf(0) }
     val itemSp = with(density) { 2.dp.roundToPx() }
-    val groupSp = with(density) { 24.dp.roundToPx() }
+    val groupSp = with(density) { 18.dp.roundToPx() }
     val topSp = with(density) { 16.dp.roundToPx() }
 
     val geometry = remember(groups, itemHt, itemSp, groupSp) {
@@ -72,7 +72,7 @@ fun ContactListBody(
             itemId = { it, group -> it.id to group },
             groupId = { it },
             padding = PaddingValues(top = 16.dp, bottom = 16.dp, end = 16.dp, start = 4.dp),
-            gap = { if (it != groups.firstOrNull()?.first) Spacer(Modifier.height(24.dp)) },
+            gap = { if (it != groups.firstOrNull()?.first) Spacer(Modifier.height(18.dp)) },
             content = { data ->
                 val id = data.value.id
 
@@ -87,9 +87,7 @@ fun ContactListBody(
                             else selection += id to data.value
                         }
                     },
-                    onLongClick = {
-                        if (selection.isEmpty()) selection += id to data.value
-                    },
+                    onLongClick = if (selection.isEmpty()) ({ selection += id to data.value }) else null,
                     modifier = if (data.position.index == 0) {
                         Modifier.onSizeChanged { px ->
                             if (px.height > 0 && px.height != itemHt) itemHt = px.height

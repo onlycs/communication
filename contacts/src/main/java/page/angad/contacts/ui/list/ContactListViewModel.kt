@@ -11,13 +11,15 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
+import page.angad.contacts.util.LoadingCounter
+import page.angad.contacts.util.attach
 import page.angad.libcontacts.Contact
 import page.angad.libcontacts.ContactsApi
 import page.angad.libcontacts.asc
 import page.angad.libcontacts.schema.Contacts
 import page.angad.libcontacts.schema.RawContacts
 
-class ContactListViewModel(context: Context) : ViewModel() {
+class ContactListViewModel(context: Context, loading: LoadingCounter) : ViewModel() {
     val api = ContactsApi(context)
 
     var list by mutableStateOf(emptyList<Contact>())
@@ -28,9 +30,7 @@ class ContactListViewModel(context: Context) : ViewModel() {
         private set
 
     init {
-        viewModelScope.launch {
-            reload()
-        }
+        viewModelScope.launch { reload() }.attach(loading)
     }
 
     suspend fun reload() {
@@ -58,15 +58,19 @@ class ContactListViewModel(context: Context) : ViewModel() {
 
     companion object {
         @Composable
-        fun new(context: Context = LocalContext.current): ContactListViewModel {
-            return viewModel(factory = ContactsViewModelFactory(context))
+        fun new(
+            context: Context = LocalContext.current,
+            loading: LoadingCounter
+        ): ContactListViewModel {
+            return viewModel(factory = ContactsViewModelFactory(context, loading))
         }
     }
 }
 
-class ContactsViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
+class ContactsViewModelFactory(private val context: Context, private val loading: LoadingCounter) :
+    ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         @Suppress("UNCHECKED_CAST")
-        return ContactListViewModel(context.applicationContext) as T
+        return ContactListViewModel(context.applicationContext, loading) as T
     }
 }

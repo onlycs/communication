@@ -8,11 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -22,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
@@ -35,6 +32,9 @@ import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.toPath
 import coil.compose.AsyncImage
+import dev.vicart.compose.material.symbols.FilledRoundedSymbol
+import dev.vicart.compose.material.symbols.FilledSymbol
+import dev.vicart.compose.material.symbols.MaterialSymbols
 import page.angad.libcontacts.Contact
 import page.angad.libcontacts.schema.Contacts
 import kotlin.math.absoluteValue
@@ -112,13 +112,11 @@ fun SelectablePhoto(
                 }
                 .background(MaterialTheme.colorScheme.primary)
         ) {
-            Icon(
-                Icons.Default.Check,
-                contentDescription = "Selected",
+            FilledRoundedSymbol(
+                icon = MaterialSymbols.CHECK,
                 tint = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .size(14.dp)
+                size = 16.dp,
+                modifier = Modifier.align(Alignment.Center)
             )
         }
     }
@@ -172,17 +170,19 @@ private fun InitialedContactPhoto(name: String) {
             )
         }
     } else {
-        Icon(
-            imageVector = Icons.Default.AccountCircle,
-            tint = color,
-            contentDescription = "(No name)",
-            modifier = Modifier
+        Box(
+            Modifier
                 .fillMaxSize()
-                .background(Color.White)
-                .graphicsLayer {
-                    scaleX = 1.2f
-                    scaleY = 1.2f
-                }
-        )
+                .background(color)
+        ) {
+            FilledSymbol(
+                icon = MaterialSymbols.ACCOUNT_CIRCLE,
+                tint = Color.White,
+                size = 16.dp,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .scale(3.15f)
+            )
+        }
     }
 }
