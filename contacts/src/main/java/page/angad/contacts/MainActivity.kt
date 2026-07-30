@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import page.angad.contacts.ui.list.ContactList
+import page.angad.contacts.ui.main.ContactList
 import page.angad.contacts.ui.theme.ContactsTheme
 import page.angad.uicore.RequirePermissions
 

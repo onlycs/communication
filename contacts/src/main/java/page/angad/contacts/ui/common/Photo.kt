@@ -80,7 +80,7 @@ fun SelectablePhoto(
     val scale by animateFloatAsState(
         targetValue = if (selected) 1.25f else 1f,
         animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
+            dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessMedium
         ),
         label = "Contact/Select/PhotoScale"
@@ -122,7 +122,6 @@ fun SelectablePhoto(
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ContactPhoto(contact: Contact) {
     val photoUri = contact[Contacts.PhotoUri]
@@ -142,7 +141,6 @@ fun ContactPhoto(contact: Contact) {
     )
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun InitialedContactPhoto(name: String) {
     val initial = name.takeIf { it.isNotEmpty() }?.first()

@@ -1,4 +1,4 @@
-package page.angad.contacts.ui.list.components
+package page.angad.contacts.ui.main.components
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,9 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import page.angad.contacts.ui.list.computeGeometry
-import page.angad.contacts.ui.list.sortGroup
-import page.angad.contacts.util.dedupSz
+import page.angad.contacts.ui.main.computeGeometry
+import page.angad.contacts.ui.main.sortGroup
+import page.angad.contacts.util.runs
 import page.angad.libcontacts.Contact
 import page.angad.uicore.SegmentedListColumn
 
@@ -38,8 +38,8 @@ fun ContactListBody(
     val state = rememberLazyListState()
 
     val groups = remember(contacts) {
-        val pre = if (starred.isEmpty()) emptyList() else listOf(STARRED_GROUP to starred.size)
-        pre + contacts.map { it.sortGroup() }.dedupSz()
+        val star = if (starred.isEmpty()) emptyList() else listOf(STARRED_GROUP to starred.size)
+        star + contacts.map { it.sortGroup() }.runs()
     }
 
     var itemHt by remember { mutableIntStateOf(0) }

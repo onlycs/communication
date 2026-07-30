@@ -1,4 +1,4 @@
-package page.angad.contacts.ui.list
+package page.angad.contacts.ui.main
 
 import page.angad.libcontacts.Contact
 import page.angad.libcontacts.schema.Contacts

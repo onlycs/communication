@@ -1,4 +1,4 @@
-package page.angad.contacts.ui.list.page
+package page.angad.contacts.ui.search
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.text.input.TextFieldState
@@ -16,11 +16,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberContainedSearchBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import dev.vicart.compose.material.symbols.MaterialSymbols
 import dev.vicart.compose.material.symbols.OutlinedRoundedSymbol
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import page.angad.contacts.ui.list.ContactListViewModel
+import page.angad.contacts.ui.ContactsViewModel
+import page.angad.libcontacts.Contact
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,7 +72,7 @@ fun SearchTrailing(barState: SearchBarState, inputState: TextFieldState) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchBar(viewModel: ContactListViewModel) {
+fun SearchBar(viewModel: ContactsViewModel, selection: SnapshotStateMap<Long, Contact>) {
     val inputState = rememberTextFieldState()
     val barState = rememberContainedSearchBarState()
     val scope = rememberCoroutineScope()
@@ -101,7 +103,7 @@ fun SearchBar(viewModel: ContactListViewModel) {
             colors = SearchBarDefaults.containedColors(barState)
                 .copy(containerColor = MaterialTheme.colorScheme.surface)
         ) {
-            // search results
+            SearchResults(inputState.text, selection)
         }
     }
 }

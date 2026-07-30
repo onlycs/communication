@@ -1,4 +1,4 @@
-package page.angad.contacts.ui.list
+package page.angad.contacts.ui
 
 import android.content.Context
 import androidx.compose.runtime.Composable
@@ -10,16 +10,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import page.angad.contacts.util.LoadingCounter
-import page.angad.contacts.util.attach
+import kotlinx.coroutines.withContext
 import page.angad.libcontacts.Contact
 import page.angad.libcontacts.ContactsApi
 import page.angad.libcontacts.asc
 import page.angad.libcontacts.schema.Contacts
 import page.angad.libcontacts.schema.RawContacts
 
-class ContactListViewModel(context: Context, loading: LoadingCounter) : ViewModel() {
+class ContactsViewModel(context: Context, loading: LoadingCounter) : ViewModel() {
     val api = ContactsApi(context)
 
     var list by mutableStateOf(emptyList<Contact>())
@@ -30,7 +32,17 @@ class ContactListViewModel(context: Context, loading: LoadingCounter) : ViewMode
         private set
 
     init {
-        viewModelScope.launch { reload() }.attach(loading)
+        launch(loading) { reload() }
+    }
+
+    fun launch(block: suspend CoroutineScope.() -> Unit): Job {
+        return viewModelScope.launch {
+            withContext(Dispatchers.IO, block)
+        }
+    }
+
+    fun launch(loading: LoadingCounter, block: suspend CoroutineScope.() -> Unit): Job {
+        return launch(block).attach(loading)
     }
 
     suspend fun reload() {
@@ -61,16 +73,19 @@ class ContactListViewModel(context: Context, loading: LoadingCounter) : ViewMode
         fun new(
             context: Context = LocalContext.current,
             loading: LoadingCounter
-        ): ContactListViewModel {
+        ): ContactsViewModel {
             return viewModel(factory = ContactsViewModelFactory(context, loading))
         }
     }
 }
 
-class ContactsViewModelFactory(private val context: Context, private val loading: LoadingCounter) :
+private class ContactsViewModelFactory(
+    private val context: Context,
+    private val loading: LoadingCounter
+) :
     ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         @Suppress("UNCHECKED_CAST")
-        return ContactListViewModel(context.applicationContext, loading) as T
+        return ContactsViewModel(context.applicationContext, loading) as T
     }
 }

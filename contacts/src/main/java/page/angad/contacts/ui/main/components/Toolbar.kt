@@ -1,4 +1,4 @@
-package page.angad.contacts.ui.list.page
+package page.angad.contacts.ui.main.components
 
 import android.content.Context
 import android.content.Intent
@@ -46,14 +46,13 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewModelScope
 import dev.vicart.compose.material.symbols.FilledRoundedSymbol
 import dev.vicart.compose.material.symbols.MaterialSymbols
 import dev.vicart.compose.material.symbols.OutlinedRoundedSymbol
-import kotlinx.coroutines.launch
-import page.angad.contacts.ui.list.ContactListViewModel
-import page.angad.contacts.util.LoadingCounter
-import page.angad.contacts.util.attach
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import page.angad.contacts.ui.ContactsViewModel
+import page.angad.contacts.ui.LoadingCounter
 import page.angad.contacts.util.setFilename
 import page.angad.libcontacts.Contact
 import page.angad.libcontacts.inList
@@ -63,7 +62,7 @@ import page.angad.libcontacts.schema.RawContacts
 @Composable
 fun BoxScope.Toolbar(
     context: Context = LocalContext.current,
-    viewModel: ContactListViewModel,
+    viewModel: ContactsViewModel,
     selection: SnapshotStateMap<Long, Contact>,
     loading: LoadingCounter
 ) {
@@ -72,17 +71,15 @@ fun BoxScope.Toolbar(
     DeleteDialog(
         showDelete,
         {
-            viewModel.viewModelScope
-                .launch {
-                    viewModel.api
-                        .delete(RawContacts)
-                        .where(RawContacts.ContactId inList selection.keys.toList())
-                        .commit()
+            viewModel.launch(loading) {
+                viewModel.api
+                    .delete(RawContacts)
+                    .where(RawContacts.ContactId inList selection.keys.toList())
+                    .commit()
 
-                    selection.clear()
-                    viewModel.reload()
-                }
-                .attach(loading)
+                selection.clear()
+                viewModel.reload()
+            }
         },
         selection.size == 1
     )
@@ -119,31 +116,38 @@ fun BoxScope.Toolbar(
                 BackHandler(shareMenu) { shareMenu = false }
 
                 val shareMany = {
-                    viewModel.viewModelScope
-                        .launch {
-                            val vCards = viewModel.api.vCards(selection.keys.toList())
-                            if (vCards.isEmpty()) return@launch // TODO: show a toast?
+                    viewModel.launch(loading) {
+                        val vCards = viewModel.api.vCards(selection.keys.toList())
+                        if (vCards.isEmpty()) return@launch // TODO: show a toast?
 
-                            val mime = vCards[0].mimeType
-                            val uris =
-                                vCards.map { setFilename(context, it.uri, it.suggestedFileName) }
-
-                            val send = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
-                                type = mime
-                                putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(uris))
-                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            }
-
-                            context.startActivity(Intent.createChooser(send, "Export contacts"))
+                        val mime = vCards[0].mimeType
+                        val uris = vCards.map {
+                            setFilename(
+                                context,
+                                it.uri,
+                                it.suggestedFileName
+                            )
                         }
-                        .attach(loading)
+
+                        val send = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                            type = mime
+                            putParcelableArrayListExtra(
+                                Intent.EXTRA_STREAM,
+                                ArrayList(uris)
+                            )
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+
+                        context.startActivity(Intent.createChooser(send, "Export contacts"))
+                        selection.clear()
+                    }
                 }
 
                 val shareOne = {
-                    viewModel.viewModelScope
-                        .launch {
+                    viewModel.launch(loading) {
+                        withContext(Dispatchers.IO) {
                             val vCard = viewModel.api.vCardCombined(selection.keys.toList())
-                                ?: return@launch // TODO: show a toast?
+                                ?: return@withContext // TODO: show a toast?
 
                             val mime = vCard.mimeType
                             val uri = setFilename(context, vCard.uri, vCard.suggestedFileName)
@@ -155,8 +159,9 @@ fun BoxScope.Toolbar(
                             }
 
                             context.startActivity(Intent.createChooser(send, "Export contacts"))
+                            selection.clear()
                         }
-                        .attach(loading)
+                    }
                 }
 
                 DropdownMenuPopup(
@@ -222,21 +227,19 @@ fun BoxScope.Toolbar(
                 IconToggleButton(
                     checked = allStarred,
                     onCheckedChange = { star ->
-                        viewModel.viewModelScope
-                            .launch {
-                                val ids = selection.keys.toList()
+                        viewModel.launch(loading) {
+                            val ids = selection.keys.toList()
 
-                                viewModel.api
-                                    .update { it[Contacts.Starred] = star }
-                                    .where(Contacts.Id inList ids)
-                                    .commit()
+                            viewModel.api
+                                .update { it[Contacts.Starred] = star }
+                                .where(Contacts.Id inList ids)
+                                .commit()
 
-                                viewModel.reload(ids)
-                                ids.forEach { id ->
-                                    viewModel.map[id]?.let { selection[id] = it }
-                                }
+                            viewModel.reload(ids)
+                            ids.forEach { id ->
+                                viewModel.map[id]?.let { selection[id] = it }
                             }
-                            .attach(loading)
+                        }
                     },
                     shapes = IconButtonDefaults.toggleableShapes(),
                     colors = IconButtonDefaults.iconToggleButtonColors().copy(

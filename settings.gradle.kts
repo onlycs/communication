@@ -27,3 +27,4 @@ rootProject.name = "Communication"
 include(":contacts")
 include(":uicore")
 include(":libcontacts")
+include(":fuzzy")

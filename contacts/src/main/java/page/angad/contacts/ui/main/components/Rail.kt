@@ -1,4 +1,4 @@
-package page.angad.contacts.ui.list.components
+package page.angad.contacts.ui.main.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import dev.vicart.compose.material.symbols.FilledRoundedSymbol
 import dev.vicart.compose.material.symbols.MaterialSymbols
-import page.angad.contacts.ui.list.ListGeometry
+import page.angad.contacts.ui.main.ListGeometry
 import kotlin.math.max
 import kotlin.math.min
 

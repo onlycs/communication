@@ -1,4 +1,4 @@
-package page.angad.contacts.ui.list.components
+package page.angad.contacts.ui.main.components
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
