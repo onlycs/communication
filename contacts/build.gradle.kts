@@ -65,6 +65,7 @@ dependencies {
     // first party
     implementation(project(":libcontacts"))
     implementation(project(":uicore"))
+    implementation(project(":fuzzy"))
 
     // debug
     debugImplementation(libs.androidx.compose.ui.tooling)

@@ -34,7 +34,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.TransformOrigin
@@ -50,9 +49,9 @@ import dev.vicart.compose.material.symbols.FilledRoundedSymbol
 import dev.vicart.compose.material.symbols.MaterialSymbols
 import dev.vicart.compose.material.symbols.OutlinedRoundedSymbol
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.withContext
-import page.angad.contacts.ui.ContactsViewModel
-import page.angad.contacts.ui.LoadingCounter
+import page.angad.contacts.ui.main.ContactListState
 import page.angad.contacts.util.setFilename
 import page.angad.libcontacts.Contact
 import page.angad.libcontacts.inList
@@ -62,10 +61,9 @@ import page.angad.libcontacts.schema.RawContacts
 @Composable
 fun BoxScope.Toolbar(
     context: Context = LocalContext.current,
-    viewModel: ContactsViewModel,
-    selection: SnapshotStateMap<Long, Contact>,
-    loading: LoadingCounter
+    state: ContactListState = ContactListState.current,
 ) {
+    val (viewModel, selection, loading) = state
     val showDelete = remember { mutableStateOf(false) }
 
     DeleteDialog(
@@ -102,9 +100,7 @@ fun BoxScope.Toolbar(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            FloatingActionButton(
-                onClick = { selection.clear() }
-            ) {
+            FloatingActionButton(onClick = { selection.clear() }) {
                 OutlinedRoundedSymbol(
                     MaterialSymbols.CHEVRON_LEFT,
                     size = 36.dp,
@@ -112,7 +108,9 @@ fun BoxScope.Toolbar(
             }
 
             HorizontalFloatingToolbar(expanded = true) {
-                var shareMenu by remember { mutableStateOf(false) }
+                val menuState = remember { mutableStateOf(false) }
+                var shareMenu by menuState
+
                 BackHandler(shareMenu) { shareMenu = false }
 
                 val shareMany = {
@@ -164,54 +162,7 @@ fun BoxScope.Toolbar(
                     }
                 }
 
-                DropdownMenuPopup(
-                    expanded = shareMenu,
-                    onDismissRequest = { shareMenu = false },
-                    popupPositionProvider = positionDropdown(),
-                ) {
-                    DropdownMenuGroup(
-                        shapes = MenuDefaults.groupShape(0, 1),
-                        containerColor = MenuDefaults.groupVibrantContainerColor
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("One file") },
-                            colors = MenuDefaults.selectableItemVibrantColors(),
-                            supportingText = {
-                                Text(
-                                    "Combine contacts into one file",
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            },
-                            shapes = MenuDefaults.itemShape(0, 2),
-                            leadingIcon = {
-                                @Suppress("DEPRECATION") // Non auto-mirrored is purposeful
-                                Icon(Icons.Outlined.InsertDriveFile, null)
-                            },
-                            checked = false,
-                            onCheckedChange = {
-                                shareMenu = false
-                                shareOne()
-                            },
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Many files") },
-                            colors = MenuDefaults.selectableItemVibrantColors(),
-                            supportingText = {
-                                Text(
-                                    "Each contact gets its own file",
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            },
-                            shapes = MenuDefaults.itemShape(1, 2),
-                            leadingIcon = { OutlinedRoundedSymbol(MaterialSymbols.FILE_COPY) },
-                            checked = false,
-                            onCheckedChange = {
-                                shareMenu = false
-                                shareMany()
-                            },
-                        )
-                    }
-                }
+                Dropdown(menuState, shareOne, shareMany)
 
                 IconButton(onClick = {
                     if (selection.size == 1) shareMany()
@@ -281,6 +232,64 @@ fun BoxScope.Toolbar(
                     OutlinedRoundedSymbol(MaterialSymbols.DELETE)
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun Dropdown(
+    shareMenu: MutableState<Boolean>,
+    shareOne: () -> Job,
+    shareMany: () -> Job
+) {
+    var shareMenu by shareMenu
+
+    DropdownMenuPopup(
+        expanded = shareMenu,
+        onDismissRequest = { shareMenu = false },
+        popupPositionProvider = positionDropdown(),
+    ) {
+        DropdownMenuGroup(
+            shapes = MenuDefaults.groupShape(0, 1),
+            containerColor = MenuDefaults.groupVibrantContainerColor
+        ) {
+            DropdownMenuItem(
+                text = { Text("One file") },
+                colors = MenuDefaults.selectableItemVibrantColors(),
+                supportingText = {
+                    Text(
+                        "Combine contacts into one file",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                },
+                shapes = MenuDefaults.itemShape(0, 2),
+                leadingIcon = {
+                    @Suppress("DEPRECATION") // Non auto-mirrored is purposeful
+                    Icon(Icons.Outlined.InsertDriveFile, null)
+                },
+                checked = false,
+                onCheckedChange = {
+                    shareMenu = false
+                    shareOne()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text("Many files") },
+                colors = MenuDefaults.selectableItemVibrantColors(),
+                supportingText = {
+                    Text(
+                        "Each contact gets its own file",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                },
+                shapes = MenuDefaults.itemShape(1, 2),
+                leadingIcon = { OutlinedRoundedSymbol(MaterialSymbols.FILE_COPY) },
+                checked = false,
+                onCheckedChange = {
+                    shareMenu = false
+                    shareMany()
+                },
+            )
         }
     }
 }

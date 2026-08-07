@@ -14,9 +14,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.vicart.compose.material.symbols.MaterialSymbols
 import dev.vicart.compose.material.symbols.OutlinedRoundedSymbol
+import page.angad.contacts.ui.main.ContactListIntent
+import page.angad.contacts.ui.main.ContactListState
 
 @Composable
-fun BoxScope.AddFab(visible: Boolean) {
+fun BoxScope.AddFab(state: ContactListState = ContactListState.current) {
+    val (_, selection, _, intent) = state
+    val visible = selection.isEmpty() && intent is ContactListIntent.Ui
+
     AnimatedVisibility(
         visible = visible,
         enter = slideInHorizontally(
@@ -35,7 +40,10 @@ fun BoxScope.AddFab(visible: Boolean) {
                 .padding(16.dp)
                 .navigationBarsPadding(),
         ) {
-            OutlinedRoundedSymbol(MaterialSymbols.ADD)
+            OutlinedRoundedSymbol(
+                MaterialSymbols.ADD,
+                size = 32.dp,
+            )
         }
     }
 }

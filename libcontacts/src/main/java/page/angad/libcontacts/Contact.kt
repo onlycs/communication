@@ -1,6 +1,8 @@
 package page.angad.libcontacts
 
 import android.content.ContentResolver
+import android.net.Uri
+import android.provider.ContactsContract
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import page.angad.libcontacts.schema.Contacts
@@ -31,6 +33,27 @@ class Contact internal constructor(
      */
     suspend fun reload(): Contact? = withContext(Dispatchers.IO) {
         findContacts(resolver, requested, listOf(Contacts.Id eq id), emptyList()).firstOrNull()
+    }
+
+    /**
+     * This contact's lookup uri — the id-plus-lookup-key uri that survives the contact
+     * being re-aggregated, and what `ACTION_VIEW`/`ACTION_EDIT` and shortcuts expect.
+     * `null` if the contact no longer exists or has no lookup key.
+     *
+     * Selecting [Contacts.LookupKey] avoids the extra query this otherwise runs.
+     */
+    suspend fun lookupUri(): Uri? = withContext(Dispatchers.IO) {
+        val lookupKey =
+            if (Contacts.LookupKey in contact) contact[Contacts.LookupKey]
+            else queryRows(
+                resolver,
+                Contacts,
+                listOf(Contacts.LookupKey),
+                listOf(Contacts.Id eq id),
+                null
+            ).firstOrNull()?.get(Contacts.LookupKey)
+
+        lookupKey?.let { ContactsContract.Contacts.getLookupUri(id, it) }
     }
 
     /** vCard export of this contact, ready for a share intent. */

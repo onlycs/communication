@@ -55,7 +55,7 @@ sealed class ListItemPosition(val index: Int) {
     }
 }
 
-data class ListItemData<T>(val value: T, val position: ListItemPosition) {
+open class ListItemData<T>(val value: T, val position: ListItemPosition) {
     @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Composable
     fun shape(): ListItemShapes {
@@ -65,19 +65,8 @@ data class ListItemData<T>(val value: T, val position: ListItemPosition) {
     }
 }
 
-data class GroupedListItemData<T, G>(
-    val value: T,
-    val group: G,
-    val position: ListItemPosition,
-) {
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-    @Composable
-    fun shape(): ListItemShapes {
-        val shapes = MaterialTheme.shapes
-        val corners = remember(position, shapes) { position.cornerShape(shapes) }
-        return ListItemDefaults.shapes(shape = corners)
-    }
-}
+class GroupedListItemData<T, G>(value: T, val group: G, position: ListItemPosition) :
+    ListItemData<T>(value, position)
 
 @Composable
 fun <T, G> SegmentedListColumn(
@@ -135,17 +124,22 @@ fun <T, G> SegmentedListColumn(
 
 @Composable
 fun <T> SegmentedListColumn(
+    modifier: Modifier = Modifier,
     content: @Composable (ListItemData<T>) -> Unit,
     data: Iterable<T>,
     id: ((T) -> Any)? = null,
+    padding: PaddingValues = PaddingValues(16.dp),
+    overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
     state: LazyListState = rememberLazyListState(),
 ) {
     val list = data.toList()
 
     LazyColumn(
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+        contentPadding = padding,
         verticalArrangement = Arrangement.spacedBy(2.dp),
-        state = state
+        modifier = modifier,
+        state = state,
+        overscrollEffect = overscrollEffect
     ) {
         itemsIndexed(list, key = { i, item -> id?.let { it(item) } ?: i }) { i, item ->
             content(

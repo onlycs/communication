@@ -5,34 +5,52 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.ListItemShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import page.angad.contacts.ui.common.SelectablePhoto
+import page.angad.contacts.ui.main.displayName
 import page.angad.contacts.util.appName
 import page.angad.libcontacts.Contact
-import page.angad.libcontacts.schema.Contacts
 import page.angad.libcontacts.schema.RawContacts
-import page.angad.uicore.GroupedListItemData
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ContactListItem(
-    data: GroupedListItemData<Contact, Char>,
+    contact: Contact,
+    shapes: ListItemShapes,
     modifier: Modifier = Modifier,
     selected: Boolean,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)?,
+    highlights: Set<Int> = emptySet()
 ) {
+    val text = contact.displayName
+    val annotated = buildAnnotatedString {
+        text.forEachIndexed { idx, ch ->
+            if (idx in highlights) {
+                withStyle(SpanStyle(color = Color(0xffff6467))) { append(ch) }
+                return@forEachIndexed
+            }
+
+            append(ch)
+        }
+    }
+
     SegmentedListItem(
-        shapes = data.shape(),
+        shapes = shapes,
         selected = selected,
         colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
         onClick = onClick,
@@ -40,10 +58,10 @@ fun ContactListItem(
         modifier = modifier
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            SelectablePhoto(contact = data.value, selected = selected)
+            SelectablePhoto(contact = contact, selected = selected)
 
             Text(
-                data.value[Contacts.DisplayName] ?: "(No name)",
+                annotated,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(start = 16.dp)
@@ -52,7 +70,7 @@ fun ContactListItem(
             Spacer(Modifier.weight(1f))
 
             AccountLabel(
-                contact = data.value,
+                contact = contact,
                 modifier = Modifier.padding(start = 16.dp)
             )
         }

@@ -35,3 +35,6 @@ fun computeGeometry(
 
     return ListGeometry(pfx, labels)
 }
+
+val Contact.displayName: String
+    get() = this[Contacts.DisplayName] ?: "(No name)"
